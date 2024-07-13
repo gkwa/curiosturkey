@@ -9,26 +9,41 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	hideAge bool
+	age     string
+)
+
 var newerThanCmd = &cobra.Command{
-	Use:   "newerthan [timespan] [path]",
+	Use:   "newerthan <path> [<path>...] --age=<timespan>",
 	Short: "Order repositories newer than the specified timespan",
-	Long:  `This command orders the repositories in the given path that are newer than the specified timespan.`,
-	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		timespan, err := core.ParseTimespan(args[0])
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing timespan: %v\n", err)
-			os.Exit(1)
+	Long:  `This command orders the repositories in the given paths that are newer than the specified timespan.`,
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if age == "" {
+			return fmt.Errorf("--age flag is required")
 		}
 
-		repoInfos, err := core.OrderReposByCommitDate(cmd.Context(), args[1])
+		timespan, err := core.ParseTimespan(age)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("error parsing timespan: %v", err)
 		}
 
-		filteredRepoInfos := filterReposByTimespan(repoInfos, timespan)
+		var allRepoInfos []core.RepoInfo
+		for _, path := range args {
+			repoInfos, err := core.OrderReposByCommitDate(cmd.Context(), path)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error processing path %s: %v\n", path, err)
+				continue
+			}
+			allRepoInfos = append(allRepoInfos, repoInfos...)
+		}
+
+		filteredRepoInfos := filterReposByTimespan(allRepoInfos, timespan)
+		core.SortRepoInfos(filteredRepoInfos)
 		printRepoInfo(filteredRepoInfos)
+
+		return nil
 	},
 }
 
@@ -46,11 +61,21 @@ func filterReposByTimespan(repoInfos []core.RepoInfo, timespan time.Duration) []
 func printRepoInfo(repoInfos []core.RepoInfo) {
 	now := time.Now()
 	for _, info := range repoInfos {
-		relTime := core.FormatUserFriendlyDuration(now.Sub(info.LatestDate))
-		fmt.Printf("%s: %s\n", relTime, info.Path)
+		if hideAge {
+			fmt.Printf("%s\n", info.Path)
+		} else {
+			relTime := core.FormatUserFriendlyDuration(now.Sub(info.LatestDate))
+			fmt.Printf("%s: %s\n", relTime, info.Path)
+		}
 	}
 }
 
 func init() {
 	rootCmd.AddCommand(newerThanCmd)
+	newerThanCmd.Flags().BoolVar(&hideAge, "hide-age", false, "Hide the age of the repositories")
+	newerThanCmd.Flags().StringVar(&age, "age", "", "Age threshold for repositories (e.g., 1y2M3w4d5h6m)")
+	if err := newerThanCmd.MarkFlagRequired("age"); err != nil {
+		fmt.Fprintf(os.Stderr, "Error marking 'age' flag as required: %v\n", err)
+		os.Exit(1)
+	}
 }

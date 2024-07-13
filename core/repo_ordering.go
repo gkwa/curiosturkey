@@ -24,11 +24,9 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 		return nil, err
 	}
 
-	sortedRepoInfos := sortRepoInfos(repoInfos)
+	logger.V(1).Info("Finished collecting repository information", "count", len(repoInfos))
 
-	logger.V(1).Info("Finished ordering repositories", "count", len(sortedRepoInfos))
-
-	return sortedRepoInfos, nil
+	return repoInfos, nil
 }
 
 func CollectReposInfo(rootDir string) ([]RepoInfo, error) {
@@ -74,11 +72,8 @@ func processRepo(path string) (RepoInfo, error) {
 	}, nil
 }
 
-func sortRepoInfos(repoInfos []RepoInfo) []RepoInfo {
-	sortedRepoInfos := make([]RepoInfo, len(repoInfos))
-	copy(sortedRepoInfos, repoInfos)
-	sort.Slice(sortedRepoInfos, func(i, j int) bool {
-		return sortedRepoInfos[i].LatestDate.Before(sortedRepoInfos[j].LatestDate)
+func SortRepoInfos(repoInfos []RepoInfo) {
+	sort.Slice(repoInfos, func(i, j int) bool {
+		return repoInfos[i].LatestDate.Before(repoInfos[j].LatestDate)
 	})
-	return sortedRepoInfos
 }
