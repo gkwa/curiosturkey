@@ -19,7 +19,12 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 		return nil, fmt.Errorf("error expanding path: %v", err)
 	}
 
-	repoInfos, err := CollectReposInfo(expandedPath)
+	allPaths, err := collectAllPaths(expandedPath)
+	if err != nil {
+		return nil, err
+	}
+
+	repoInfos, err := processGitRepos(allPaths)
 	if err != nil {
 		return nil, err
 	}
@@ -29,27 +34,39 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 	return repoInfos, nil
 }
 
-func CollectReposInfo(rootDir string) ([]RepoInfo, error) {
-	var repoInfos []RepoInfo
+func collectAllPaths(rootDir string) ([]string, error) {
+	var allPaths []string
 
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-
-		if isGitRepo(info) {
-			repoInfo, err := processRepo(path)
-			if err != nil {
-				return err
-			}
-			repoInfos = append(repoInfos, repoInfo)
-			return filepath.SkipDir
-		}
-
+		allPaths = append(allPaths, path)
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error walking the path %s: %v", rootDir, err)
+	}
+
+	return allPaths, nil
+}
+
+func processGitRepos(paths []string) ([]RepoInfo, error) {
+	var repoInfos []RepoInfo
+
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err != nil {
+			continue
+		}
+
+		if isGitRepo(info) {
+			repoInfo, err := processRepo(path)
+			if err != nil {
+				continue
+			}
+			repoInfos = append(repoInfos, repoInfo)
+		}
 	}
 
 	return repoInfos, nil
