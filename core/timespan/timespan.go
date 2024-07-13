@@ -26,13 +26,13 @@ func Parse(s string) (time.Duration, error) {
 		unit := match[2]
 		switch unit {
 		case "y":
-			totalDuration += time.Duration(value * float64(365*24*time.Hour))
+			totalDuration += time.Duration(value * 365.25 * 24 * float64(time.Hour))
 		case "M":
-			totalDuration += time.Duration(value * float64(30*24*time.Hour))
+			totalDuration += time.Duration(value * 30.44 * 24 * float64(time.Hour))
 		case "w":
-			totalDuration += time.Duration(value * float64(7*24*time.Hour))
+			totalDuration += time.Duration(value * 7 * 24 * float64(time.Hour))
 		case "d":
-			totalDuration += time.Duration(value * float64(24*time.Hour))
+			totalDuration += time.Duration(value * 24 * float64(time.Hour))
 		case "h":
 			totalDuration += time.Duration(value * float64(time.Hour))
 		case "m":
