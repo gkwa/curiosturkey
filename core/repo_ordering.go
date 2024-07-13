@@ -6,31 +6,29 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/mitchellh/go-homedir"
 )
 
-func OrderReposByCommitDate(ctx context.Context, rootDir string) error {
+func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, error) {
 	logger := logr.FromContextOrDiscard(ctx)
 
 	expandedPath, err := homedir.Expand(rootDir)
 	if err != nil {
-		return fmt.Errorf("error expanding path: %v", err)
+		return nil, fmt.Errorf("error expanding path: %v", err)
 	}
 
 	repoInfos, err := collectRepoInfo(expandedPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sortRepoInfos(repoInfos)
-	printRepoInfo(repoInfos)
 
 	logger.V(1).Info("Finished ordering repositories", "count", len(repoInfos))
 
-	return nil
+	return repoInfos, nil
 }
 
 func collectRepoInfo(rootDir string) ([]RepoInfo, error) {
@@ -80,12 +78,4 @@ func sortRepoInfos(repoInfos []RepoInfo) {
 	sort.Slice(repoInfos, func(i, j int) bool {
 		return repoInfos[i].LatestDate.Before(repoInfos[j].LatestDate)
 	})
-}
-
-func printRepoInfo(repoInfos []RepoInfo) {
-	now := time.Now()
-	for _, info := range repoInfos {
-		relTime := formatUserFriendlyDuration(now.Sub(info.LatestDate))
-		fmt.Printf("%s: %s\n", relTime, info.Path)
-	}
 }

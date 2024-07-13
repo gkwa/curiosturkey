@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gkwa/curiosturkey/core"
 	"github.com/spf13/cobra"
@@ -16,12 +17,23 @@ var helloCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := LoggerFrom(cmd.Context())
 		logger.Info("Running hello command")
-		err := core.OrderReposByCommitDate(cmd.Context(), args[0])
+
+		repoInfos, err := core.OrderReposByCommitDate(cmd.Context(), args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
+
+		printRepoInfo(repoInfos)
 	},
+}
+
+func printRepoInfo(repoInfos []core.RepoInfo) {
+	now := time.Now()
+	for _, info := range repoInfos {
+		relTime := core.FormatUserFriendlyDuration(now.Sub(info.LatestDate))
+		fmt.Printf("%s: %s\n", relTime, info.Path)
+	}
 }
 
 func init() {

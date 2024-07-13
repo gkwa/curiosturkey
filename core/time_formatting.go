@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func formatUserFriendlyDuration(d time.Duration) string {
+func FormatUserFriendlyDuration(d time.Duration) string {
 	if d < time.Minute {
 		return "just now"
 	}
