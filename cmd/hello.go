@@ -1,18 +1,26 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/gkwa/curiosturkey/core"
 	"github.com/spf13/cobra"
 )
 
 var helloCmd = &cobra.Command{
-	Use:   "hello",
-	Short: "A brief description of your command",
-	Long:  `A longer description that spans multiple lines and likely contains examples and usage of using your command.`,
+	Use:   "hello [path]",
+	Short: "Order repositories by commit date",
+	Long:  `This command orders the repositories in the given path by their most recent commit date.`,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := LoggerFrom(cmd.Context())
 		logger.Info("Running hello command")
-		core.Hello(logger)
+		err := core.OrderReposByCommitDate(cmd.Context(), args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
