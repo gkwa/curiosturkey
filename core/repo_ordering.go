@@ -19,12 +19,12 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 		return nil, fmt.Errorf("error expanding path: %v", err)
 	}
 
-	allPaths, err := collectAllPaths(expandedPath)
+	allPaths, err := collectAllPaths(ctx, expandedPath)
 	if err != nil {
 		return nil, err
 	}
 
-	repoInfos, err := processGitRepos(allPaths)
+	repoInfos, err := processGitRepos(ctx, allPaths)
 	if err != nil {
 		return nil, err
 	}
@@ -34,13 +34,16 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 	return repoInfos, nil
 }
 
-func collectAllPaths(rootDir string) ([]string, error) {
+func collectAllPaths(ctx context.Context, rootDir string) ([]string, error) {
+	logger := logr.FromContextOrDiscard(ctx)
 	var allPaths []string
 
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
+
+		logger.V(1).Info("Found path", "path", path)
 		allPaths = append(allPaths, path)
 		return nil
 	})
@@ -48,10 +51,12 @@ func collectAllPaths(rootDir string) ([]string, error) {
 		return nil, fmt.Errorf("error walking the path %s: %v", rootDir, err)
 	}
 
+	logger.V(1).Info("Collected all paths", "count", len(allPaths))
 	return allPaths, nil
 }
 
-func processGitRepos(paths []string) ([]RepoInfo, error) {
+func processGitRepos(ctx context.Context, paths []string) ([]RepoInfo, error) {
+	logger := logr.FromContextOrDiscard(ctx)
 	var repoInfos []RepoInfo
 
 	for _, path := range paths {
@@ -61,8 +66,16 @@ func processGitRepos(paths []string) ([]RepoInfo, error) {
 		}
 
 		if isGitRepo(info) {
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				logger.Error(err, "Failed to get absolute path", "path", path)
+				continue
+			}
+			logger.V(1).Info("Discovered Git repository", "path", absPath)
+
 			repoInfo, err := processRepo(path)
 			if err != nil {
+				logger.Error(err, "Failed to process repository", "path", absPath)
 				continue
 			}
 			repoInfos = append(repoInfos, repoInfo)

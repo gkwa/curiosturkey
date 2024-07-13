@@ -30,15 +30,23 @@ var newerThanCmd = &cobra.Command{
 			return fmt.Errorf("error parsing timespan: %v", err)
 		}
 
+		logger := LoggerFrom(cmd.Context())
+		logger.V(1).Info("Starting to process input paths")
+
 		var allRepoInfos []core.RepoInfo
 		for _, path := range args {
+			logger.V(1).Info("Processing path", "path", path)
 			repoInfos, err := core.OrderReposByCommitDate(cmd.Context(), path)
 			if err != nil {
+				logger.Error(err, "Error processing path", "path", path)
 				fmt.Fprintf(os.Stderr, "Error processing path %s: %v\n", path, err)
 				continue
 			}
+			logger.V(1).Info("Finished processing path", "path", path, "reposFound", len(repoInfos))
 			allRepoInfos = append(allRepoInfos, repoInfos...)
 		}
+
+		logger.V(1).Info("Finished processing all paths", "totalReposFound", len(allRepoInfos))
 
 		filteredRepoInfos := filterReposByTimespan(allRepoInfos, timespan)
 		core.SortRepoInfos(filteredRepoInfos)
