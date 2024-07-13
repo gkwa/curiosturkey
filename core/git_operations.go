@@ -7,7 +7,7 @@ import (
 	"github.com/go-git/go-git/v5"
 )
 
-func getLatestCommitDate(repoPath string) (time.Time, error) {
+func GetLatestCommitDate(repoPath string) (time.Time, error) {
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("error opening repository: %v", err)

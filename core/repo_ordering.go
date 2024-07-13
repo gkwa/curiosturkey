@@ -19,19 +19,19 @@ func OrderReposByCommitDate(ctx context.Context, rootDir string) ([]RepoInfo, er
 		return nil, fmt.Errorf("error expanding path: %v", err)
 	}
 
-	repoInfos, err := collectRepoInfo(expandedPath)
+	repoInfos, err := CollectReposInfo(expandedPath)
 	if err != nil {
 		return nil, err
 	}
 
-	sortRepoInfos(repoInfos)
+	sortedRepoInfos := sortRepoInfos(repoInfos)
 
-	logger.V(1).Info("Finished ordering repositories", "count", len(repoInfos))
+	logger.V(1).Info("Finished ordering repositories", "count", len(sortedRepoInfos))
 
-	return repoInfos, nil
+	return sortedRepoInfos, nil
 }
 
-func collectRepoInfo(rootDir string) ([]RepoInfo, error) {
+func CollectReposInfo(rootDir string) ([]RepoInfo, error) {
 	var repoInfos []RepoInfo
 
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
@@ -63,7 +63,7 @@ func isGitRepo(info os.FileInfo) bool {
 
 func processRepo(path string) (RepoInfo, error) {
 	repoPath := filepath.Dir(path)
-	latestDate, err := getLatestCommitDate(repoPath)
+	latestDate, err := GetLatestCommitDate(repoPath)
 	if err != nil {
 		return RepoInfo{}, fmt.Errorf("error processing repository %s: %v", repoPath, err)
 	}
@@ -74,8 +74,11 @@ func processRepo(path string) (RepoInfo, error) {
 	}, nil
 }
 
-func sortRepoInfos(repoInfos []RepoInfo) {
-	sort.Slice(repoInfos, func(i, j int) bool {
-		return repoInfos[i].LatestDate.Before(repoInfos[j].LatestDate)
+func sortRepoInfos(repoInfos []RepoInfo) []RepoInfo {
+	sortedRepoInfos := make([]RepoInfo, len(repoInfos))
+	copy(sortedRepoInfos, repoInfos)
+	sort.Slice(sortedRepoInfos, func(i, j int) bool {
+		return sortedRepoInfos[i].LatestDate.Before(sortedRepoInfos[j].LatestDate)
 	})
+	return sortedRepoInfos
 }

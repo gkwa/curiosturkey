@@ -15,9 +15,6 @@ var helloCmd = &cobra.Command{
 	Long:  `This command orders the repositories in the given path by their most recent commit date.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := LoggerFrom(cmd.Context())
-		logger.Info("Running hello command")
-
 		repoInfos, err := core.OrderReposByCommitDate(cmd.Context(), args[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
