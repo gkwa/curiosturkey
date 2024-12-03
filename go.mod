@@ -2,7 +2,7 @@ module github.com/gkwa/curiosturkey
 
 go 1.22.0
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/fatih/color v1.18.0
