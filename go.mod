@@ -1,6 +1,6 @@
 module github.com/gkwa/curiosturkey
 
-go 1.25.7
+go 1.26.0
 
 toolchain go1.26.4
 
@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.28.0
-	sigs.k8s.io/controller-runtime v0.23.3
+	sigs.k8s.io/controller-runtime v0.24.1
 // ... other dependencies
 )
 
